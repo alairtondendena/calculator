@@ -2,18 +2,23 @@
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   color-scheme: light dark;
+  --error: #c62828;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --error: #ef9a9a;
+  }
 }
 
 body {
   margin: 0;
-  display: flex;
-  justify-content: center;
   padding: 1rem;
 }
 
 .calculator {
-  width: 100%;
   max-width: 28rem;
+  margin: 0 auto;
 }
 
 .calculator form {
@@ -21,7 +26,7 @@ body {
   gap: 0.75rem;
 }
 
-.calculator label {
+.field {
   display: grid;
   gap: 0.25rem;
 }
@@ -30,17 +35,37 @@ body {
 .calculator select,
 .calculator button {
   font: inherit;
+  min-height: 44px; /* comfortable touch target */
   padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+.calculator input[aria-invalid='true'] {
+  border: 2px solid var(--error);
+}
+
+.calculator button {
+  cursor: pointer;
+}
+
+.calculator button:disabled {
+  cursor: progress;
+}
+
+.field-error,
+.calculator [role='alert'] {
+  margin: 0;
+  color: var(--error);
+}
+
+.calculator [role='alert'] {
+  margin-top: 1rem;
 }
 
 .calculator output {
   display: block;
-  margin-top: 1rem;
-  font-size: 2rem;
-  min-height: 3rem;
+  margin: 1rem 0 0.5rem;
+  font-size: 1.75rem;
+  min-height: 2.5rem;
   overflow-wrap: anywhere;
-}
-
-.calculator [role='alert'] {
-  color: #c62828;
 }
