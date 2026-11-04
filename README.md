@@ -28,7 +28,13 @@ make run-backend    # API on http://localhost:8080 (override with PORT)
 make run-frontend   # UI on http://localhost:5173, proxies /api to the backend
 ```
 
-TODO: Docker.
+### With Docker
+
+```sh
+make docker-run     # or: docker build -t calculator . && docker run --rm -p 8080:8080 calculator
+```
+
+Open http://localhost:8080. A single container serves the UI and the API: a multi-stage build compiles the frontend, then a static Go binary that serves it from `STATIC_DIR`, on a distroless non-root image (~17 MB).
 
 ## Tests and coverage
 

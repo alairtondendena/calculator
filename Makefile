@@ -1,4 +1,4 @@
-.PHONY: test test-backend test-frontend coverage run-backend run-frontend
+.PHONY: test test-backend test-frontend coverage run-backend run-frontend docker-build docker-run
 
 test: test-backend test-frontend
 
@@ -17,3 +17,9 @@ run-backend:
 
 run-frontend:
 	cd frontend && npm run dev
+
+docker-build:
+	docker build -t calculator .
+
+docker-run: docker-build
+	docker run --rm -p 8080:8080 calculator
