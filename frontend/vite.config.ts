@@ -15,6 +15,8 @@ export default defineConfig({
     coverage: {
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/main.tsx', 'src/test/**'],
+      reportsDirectory: '../coverage/frontend',
+      reporter: ['text', ['text', { file: 'coverage.txt' }], 'html'],
     },
   },
 })
