@@ -4,6 +4,7 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -32,15 +33,40 @@ type apiError struct {
 	Message string `json:"message"`
 }
 
-// NewHandler returns the API routes.
-func NewHandler(logger *slog.Logger) http.Handler {
+// domainErrors maps calculator errors to responses. 400 means the request is
+// wrong; 422 means it is well formed but the result is undefined.
+var domainErrors = []struct {
+	err    error
+	status int
+	code   string
+}{
+	{calculator.ErrUnknownOperation, http.StatusBadRequest, "UNKNOWN_OPERATION"},
+	{calculator.ErrInvalidOperandCount, http.StatusBadRequest, "INVALID_OPERAND_COUNT"},
+	{calculator.ErrDivisionByZero, http.StatusUnprocessableEntity, "DIVISION_BY_ZERO"},
+	{calculator.ErrNegativeSquareRoot, http.StatusUnprocessableEntity, "NEGATIVE_SQUARE_ROOT"},
+	{calculator.ErrNonFiniteResult, http.StatusUnprocessableEntity, "NON_FINITE_RESULT"},
+}
+
+// NewHandler returns the API routes. If staticDir is not empty, the files in it
+// (the built frontend) are served at the root.
+func NewHandler(logger *slog.Logger, staticDir string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, logger, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	mux.HandleFunc("POST /api/v1/calculate", calculate(logger))
-	// TODO: JSON bodies for 404 and 405 (ServeMux answers them in plain text).
-	return mux
+	// ServeMux answers unmatched routes in plain text; these keep API errors in JSON.
+	mux.HandleFunc("/api/v1/calculate", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Allow", http.MethodPost)
+		writeError(w, logger, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "use POST")
+	})
+	mux.HandleFunc("/api/", func(w http.ResponseWriter, _ *http.Request) {
+		writeError(w, logger, http.StatusNotFound, "NOT_FOUND", "route not found")
+	})
+	if staticDir != "" {
+		mux.Handle("/", http.FileServer(http.Dir(staticDir)))
+	}
+	return logRequests(logger, mux)
 }
 
 func calculate(logger *slog.Logger) http.HandlerFunc {
@@ -50,28 +76,37 @@ func calculate(logger *slog.Logger) http.HandlerFunc {
 		dec.DisallowUnknownFields()
 
 		var req calculateRequest
-		if err := dec.Decode(&req); err != nil {
-			writeError(w, logger, http.StatusBadRequest, "INVALID_JSON", "request body must be a JSON object with operation, a and b")
+		if err := dec.Decode(&req); err != nil || dec.Decode(&struct{}{}) != io.EOF {
+			writeError(w, logger, http.StatusBadRequest, "INVALID_JSON", "request body must be a single JSON object with operation, a and an optional b")
 			return
 		}
-		// TODO: unary operations (square root) will not require b.
-		if req.A == nil || req.B == nil {
-			writeError(w, logger, http.StatusBadRequest, "MISSING_OPERAND", "operands a and b are required")
+		if req.A == nil {
+			writeError(w, logger, http.StatusBadRequest, "MISSING_OPERAND", "operand a is required")
 			return
 		}
 
-		result, err := calculator.Calculate(req.Operation, *req.A, *req.B)
-		switch {
-		case errors.Is(err, calculator.ErrUnknownOperation):
-			writeError(w, logger, http.StatusBadRequest, "UNKNOWN_OPERATION", err.Error())
-			return
-		case err != nil:
-			// TODO: map domain errors (division by zero, overflow) to specific codes.
-			writeError(w, logger, http.StatusUnprocessableEntity, "INVALID_OPERATION", err.Error())
+		operands := []float64{*req.A}
+		if req.B != nil {
+			operands = append(operands, *req.B)
+		}
+		result, err := calculator.Calculate(req.Operation, operands...)
+		if err != nil {
+			writeCalculatorError(w, logger, err)
 			return
 		}
 		writeJSON(w, logger, http.StatusOK, calculateResponse{Result: result})
 	}
+}
+
+func writeCalculatorError(w http.ResponseWriter, logger *slog.Logger, err error) {
+	for _, de := range domainErrors {
+		if errors.Is(err, de.err) {
+			writeError(w, logger, de.status, de.code, err.Error())
+			return
+		}
+	}
+	logger.Error("unmapped calculator error", "err", err)
+	writeError(w, logger, http.StatusInternalServerError, "INTERNAL_ERROR", "internal error")
 }
 
 func writeError(w http.ResponseWriter, logger *slog.Logger, status int, code, message string) {

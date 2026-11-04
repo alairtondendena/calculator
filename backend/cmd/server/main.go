@@ -26,7 +26,7 @@ func run(logger *slog.Logger) error {
 	addr := ":" + envOr("PORT", "8080")
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           httpapi.NewHandler(logger),
+		Handler:           httpapi.NewHandler(logger, os.Getenv("STATIC_DIR")),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
