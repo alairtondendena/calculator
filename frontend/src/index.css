@@ -1,0 +1,46 @@
+:root {
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.calculator {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.calculator form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.calculator label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.calculator input,
+.calculator select,
+.calculator button {
+  font: inherit;
+  padding: 0.5rem;
+}
+
+.calculator output {
+  display: block;
+  margin-top: 1rem;
+  font-size: 2rem;
+  min-height: 3rem;
+  overflow-wrap: anywhere;
+}
+
+.calculator [role='alert'] {
+  color: #c62828;
+}
