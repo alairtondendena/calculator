@@ -12,3 +12,6 @@
 /bin/
 
 .env
+
+# Local tooling
+.serena/

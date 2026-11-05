@@ -153,4 +153,4 @@ docker-compose.yml       Builds and runs the single container on :8080
 
 ## AI usage
 
-I used Claude Code throughout. The prompts, what each one produced, and my review notes are in [PROMPTS.md](PROMPTS.md).
+I used Claude Code throughout. The prompt and the plan the implementation followed are in [PROMPTS.md](PROMPTS.md).
