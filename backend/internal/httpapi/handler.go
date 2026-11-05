@@ -76,7 +76,12 @@ func calculate(logger *slog.Logger) http.HandlerFunc {
 		dec.DisallowUnknownFields()
 
 		var req calculateRequest
-		if err := dec.Decode(&req); err != nil || dec.Decode(&struct{}{}) != io.EOF {
+		if err := decodeOne(dec, &req); err != nil {
+			var tooLarge *http.MaxBytesError
+			if errors.As(err, &tooLarge) {
+				writeError(w, logger, http.StatusRequestEntityTooLarge, "BODY_TOO_LARGE", "request body must not exceed 1 KiB")
+				return
+			}
 			writeError(w, logger, http.StatusBadRequest, "INVALID_JSON", "request body must be a single JSON object with operation, a and an optional b")
 			return
 		}
@@ -95,6 +100,21 @@ func calculate(logger *slog.Logger) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, logger, http.StatusOK, calculateResponse{Result: result})
+	}
+}
+
+// decodeOne decodes exactly one JSON value; anything after it is an error.
+func decodeOne(dec *json.Decoder, v any) error {
+	if err := dec.Decode(v); err != nil {
+		return err
+	}
+	switch err := dec.Decode(&struct{}{}); err {
+	case io.EOF:
+		return nil
+	case nil:
+		return errors.New("trailing data after the JSON value")
+	default:
+		return err
 	}
 }
 

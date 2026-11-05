@@ -81,7 +81,7 @@ Every error has the same shape: `{"error": {"code": "...", "message": "..."}}`. 
 
 | Status | Code | When |
 | --- | --- | --- |
-| 400 | `INVALID_JSON` | Malformed body, trailing data, unknown fields, wrong types, numbers outside the float64 range, body over 1 KiB |
+| 400 | `INVALID_JSON` | Malformed body, trailing data, unknown fields, wrong types, numbers outside the float64 range |
 | 400 | `MISSING_OPERAND` | `a` is missing (an explicit `0` is valid) |
 | 400 | `INVALID_OPERAND_COUNT` | `b` missing for a binary operation, or present for `sqrt` |
 | 400 | `UNKNOWN_OPERATION` | Operation missing or not supported |
@@ -90,6 +90,7 @@ Every error has the same shape: `{"error": {"code": "...", "message": "..."}}`. 
 | 422 | `NON_FINITE_RESULT` | Overflow, or an undefined result such as `0 ^ -1` or `(-8) ^ 0.5` |
 | 404 | `NOT_FOUND` | Unknown route under `/api/` |
 | 405 | `METHOD_NOT_ALLOWED` | Method other than POST on `/api/v1/calculate` (with an `Allow: POST` header) |
+| 413 | `BODY_TOO_LARGE` | Request body over 1 KiB |
 
 ### `GET /healthz`
 
@@ -101,7 +102,7 @@ Returns `200 {"status":"ok"}`, for container orchestrators and load balancers.
 - **Domain separated from transport.** `internal/calculator` knows nothing about HTTP, so the arithmetic and its edge cases are tested in isolation, and `internal/httpapi` only decodes, maps errors and encodes.
 - **400 versus 422.** 400 when the request itself is wrong (shape, types, operand count); 422 when it is well formed but the result is undefined. Error codes are stable identifiers, mapped from domain errors in one table.
 - **One check for non-finite results.** Rather than anticipating every case that overflows or is undefined, the domain rejects any `Inf` or `NaN` result. It also normalizes `-0` to `0`, which JSON would otherwise show as `-0`.
-- **Strict input.** Pointer fields tell a missing operand from `0`; unknown fields, trailing data and bodies over 1 KiB are rejected. The server has read, write and idle timeouts and shuts down gracefully on SIGTERM.
+- **Strict input.** Pointer fields tell a missing operand from `0`; unknown fields and trailing data are rejected with 400, and bodies over 1 KiB with 413. The server has read, write and idle timeouts and shuts down gracefully on SIGTERM.
 - **Go standard library only.** `net/http` method routing, `encoding/json` and `log/slog` (one structured log line per request) are enough; `go.mod` has no dependencies.
 - **The backend is the source of truth.** The frontend validates for fast feedback, but always relies on the API for the result and its errors. Known error codes are shown as user-facing messages; unknown ones fall back to the API message.
 - **Frontend split by role.** `useCalculator` holds the form state and the API call, so the components only render. The API client (`services/`) and input validation and formatting (`utils/`) are plain modules with their own tests; the hook and components are tested together through the UI, the way a user drives them. Folders by role (`components/`, `hooks/`, `services/`) are a layout most React developers recognize; for one screen, feature folders would add nothing.

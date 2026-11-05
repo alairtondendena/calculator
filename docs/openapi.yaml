@@ -53,7 +53,7 @@ paths:
           description: |
             The request is wrong:
             - `INVALID_JSON`: malformed body, trailing data, unknown fields, wrong types,
-              numbers outside the float64 range, or a body over 1 KiB.
+              or numbers outside the float64 range.
             - `MISSING_OPERAND`: `a` is missing (an explicit `0` is valid).
             - `INVALID_OPERAND_COUNT`: `b` missing for a binary operation, or present for `sqrt`.
             - `UNKNOWN_OPERATION`: operation missing or not supported.
@@ -86,6 +86,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example: { error: { code: METHOD_NOT_ALLOWED, message: use POST } }
+        '413':
+          description: The request body is over 1 KiB.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example: { error: { code: BODY_TOO_LARGE, message: request body must not exceed 1 KiB } }
         '422':
           description: |
             The request is well formed but the result is undefined:
@@ -164,6 +171,7 @@ components:
               description: Stable identifier to branch on.
               enum:
                 - INVALID_JSON
+                - BODY_TOO_LARGE
                 - MISSING_OPERAND
                 - INVALID_OPERAND_COUNT
                 - UNKNOWN_OPERATION
