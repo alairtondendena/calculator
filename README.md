@@ -42,6 +42,8 @@ Backend tests are table-driven: the domain package is tested on its own, and the
 
 ## API
 
+The full contract, with schemas and an example for every operation and error, is in [docs/openapi.yaml](docs/openapi.yaml) (OpenAPI 3.1).
+
 ### `POST /api/v1/calculate`
 
 Request: `{"operation": string, "a": number, "b": number}`. `b` is omitted for `sqrt`. Response: `{"result": number}`.
@@ -131,6 +133,7 @@ frontend/src/
   constants/             Operations shown in the UI (mirrors the backend registry)
   types/                 Shared TypeScript types
   utils/                 Input validation and result formatting
+docs/openapi.yaml        API contract (OpenAPI 3.1)
 coverage/                Committed coverage reports
 Dockerfile               Multi-stage build: frontend, Go binary, distroless image
 ```
@@ -140,7 +143,7 @@ Dockerfile               Multi-stage build: frontend, Go binary, distroless imag
 - CI (GitHub Actions) running `make lint`, `make test` and the Docker build on every push.
 - End-to-end tests with Playwright against the container.
 - A `GET /api/v1/operations` endpoint so the frontend does not mirror the list of operations.
-- An OpenAPI description of the API.
+- Generating the frontend types from `docs/openapi.yaml` and linting the spec in CI, so the contract cannot drift.
 - If exposed publicly: rate limiting, metrics (request rate, latency, error codes) and tracing.
 - Decimal arithmetic if exact results mattered, for example for money.
 

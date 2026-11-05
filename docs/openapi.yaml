@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: Calculator API
+  version: 1.0.0
+  description: |
+    Arithmetic operations over IEEE 754 float64 numbers. Every error has the same
+    shape (`Error`); clients should branch on `error.code`, not on the message.
+    400 means the request is wrong; 422 means it is well formed but the result is undefined.
+servers:
+  - url: http://localhost:8080
+    description: Local server (`make run-backend` or `docker compose up`)
+# No authentication: the API is a local tool (see Assumptions in the README).
+security: []
+tags:
+  - name: calculator
+    description: Arithmetic operations
+  - name: health
+    description: Liveness check
+paths:
+  /api/v1/calculate:
+    post:
+      tags: [calculator]
+      operationId: calculate
+      summary: Apply an operation to its operands
+      description: |
+        `b` is required for binary operations and must be omitted for `sqrt`.
+        The request body is limited to 1 KiB; unknown fields and trailing data are rejected.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculateRequest'
+            examples:
+              add: { value: { operation: add, a: 2, b: 3 } }
+              subtract: { value: { operation: subtract, a: 2, b: 3 } }
+              multiply: { value: { operation: multiply, a: 2, b: 3 } }
+              divide: { value: { operation: divide, a: 3, b: 2 } }
+              power: { value: { operation: power, a: 2, b: 10 } }
+              sqrt: { value: { operation: sqrt, a: 2 } }
+              percentage:
+                summary: 20 percent of 150
+                value: { operation: percentage, a: 20, b: 150 }
+      responses:
+        '200':
+          description: The result of the operation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculateResponse'
+              example: { result: 5 }
+        '400':
+          description: |
+            The request is wrong:
+            - `INVALID_JSON`: malformed body, trailing data, unknown fields, wrong types,
+              numbers outside the float64 range, or a body over 1 KiB.
+            - `MISSING_OPERAND`: `a` is missing (an explicit `0` is valid).
+            - `INVALID_OPERAND_COUNT`: `b` missing for a binary operation, or present for `sqrt`.
+            - `UNKNOWN_OPERATION`: operation missing or not supported.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidJson:
+                  value:
+                    error:
+                      code: INVALID_JSON
+                      message: request body must be a single JSON object with operation, a and an optional b
+                missingOperand:
+                  value: { error: { code: MISSING_OPERAND, message: operand a is required } }
+                invalidOperandCount:
+                  value:
+                    error:
+                      code: INVALID_OPERAND_COUNT
+                      message: 'invalid operand count: "sqrt" takes 1 operand(s), got 2'
+                unknownOperation:
+                  value: { error: { code: UNKNOWN_OPERATION, message: 'unknown operation: "modulo"' } }
+        '405':
+          description: Method other than POST.
+          headers:
+            Allow:
+              schema: { type: string, const: POST }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example: { error: { code: METHOD_NOT_ALLOWED, message: use POST } }
+        '422':
+          description: |
+            The request is well formed but the result is undefined:
+            - `DIVISION_BY_ZERO`: `divide` with `b = 0`.
+            - `NEGATIVE_SQUARE_ROOT`: `sqrt` with `a < 0`.
+            - `NON_FINITE_RESULT`: overflow, or an undefined result such as `0 ^ -1` or `(-8) ^ 0.5`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                divisionByZero:
+                  value: { error: { code: DIVISION_BY_ZERO, message: division by zero } }
+                negativeSquareRoot:
+                  value: { error: { code: NEGATIVE_SQUARE_ROOT, message: square root of a negative number } }
+                nonFiniteResult:
+                  value: { error: { code: NON_FINITE_RESULT, message: result is not a finite number } }
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example: { error: { code: INTERNAL_ERROR, message: internal error } }
+  /healthz:
+    get:
+      tags: [health]
+      operationId: health
+      summary: Liveness check for orchestrators and load balancers
+      responses:
+        '200':
+          description: The server is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, const: ok }
+components:
+  schemas:
+    CalculateRequest:
+      type: object
+      additionalProperties: false
+      required: [operation, a]
+      properties:
+        operation:
+          type: string
+          enum: [add, subtract, multiply, divide, power, sqrt, percentage]
+          description: '`percentage` is "a percent of b": percentage(20, 150) = 30.'
+        a:
+          type: number
+          format: double
+        b:
+          type: number
+          format: double
+          description: Required for binary operations; must be omitted for `sqrt`.
+    CalculateResponse:
+      type: object
+      required: [result]
+      properties:
+        result:
+          type: number
+          format: double
+          description: The exact float64 result. Never `-0`, `Inf` or `NaN`.
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Stable identifier to branch on.
+              enum:
+                - INVALID_JSON
+                - MISSING_OPERAND
+                - INVALID_OPERAND_COUNT
+                - UNKNOWN_OPERATION
+                - DIVISION_BY_ZERO
+                - NEGATIVE_SQUARE_ROOT
+                - NON_FINITE_RESULT
+                - NOT_FOUND
+                - METHOD_NOT_ALLOWED
+                - INTERNAL_ERROR
+            message:
+              type: string
+              description: Human-readable detail; may change between versions.
