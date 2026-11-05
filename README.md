@@ -7,7 +7,7 @@ Full-stack calculator: a Go JSON API and a React + TypeScript frontend. It suppo
 ## Quick start (Docker)
 
 ```sh
-make docker-run     # or: docker build -t calculator . && docker run --rm -p 8080:8080 calculator
+docker compose up --build    # or: make docker-run
 ```
 
 Open http://localhost:8080. One container serves both the UI and the API.
@@ -136,6 +136,7 @@ frontend/src/
 docs/openapi.yaml        API contract (OpenAPI 3.1)
 coverage/                Committed coverage reports
 Dockerfile               Multi-stage build: frontend, Go binary, distroless image
+docker-compose.yml       Builds and runs the single container on :8080
 ```
 
 ## With more time

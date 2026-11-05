@@ -1,0 +1,7 @@
+# One service: the Go server serves both the API and the built frontend.
+services:
+  calculator:
+    build: .
+    image: calculator
+    ports:
+      - "8080:8080"
