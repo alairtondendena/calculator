@@ -31,6 +31,8 @@ make lint       # gofmt, go vet, staticcheck, oxlint, tsc
 make coverage   # regenerates the reports in coverage/
 ```
 
+CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `make lint`, `make test` and the Docker build on every push and pull request.
+
 | Layer | Coverage | Report |
 | --- | --- | --- |
 | Backend (`internal/...`) | 94.4 % of statements | [coverage/backend.txt](coverage/backend.txt), `coverage/backend.html` |
@@ -136,13 +138,13 @@ frontend/src/
   utils/                 Input validation and result formatting
 docs/openapi.yaml        API contract (OpenAPI 3.1)
 coverage/                Committed coverage reports
+.github/workflows/       CI: lint, tests and Docker build
 Dockerfile               Multi-stage build: frontend, Go binary, distroless image
 docker-compose.yml       Builds and runs the single container on :8080
 ```
 
 ## With more time
 
-- CI (GitHub Actions) running `make lint`, `make test` and the Docker build on every push.
 - End-to-end tests with Playwright against the container.
 - A `GET /api/v1/operations` endpoint so the frontend does not mirror the list of operations.
 - Generating the frontend types from `docs/openapi.yaml` and linting the spec in CI, so the contract cannot drift.
