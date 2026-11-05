@@ -35,10 +35,10 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `make lint`, `mak
 
 | Layer | Coverage | Report |
 | --- | --- | --- |
-| Backend (`internal/...`) | 94.4 % of statements | [coverage/backend.txt](coverage/backend.txt), `coverage/backend.html` |
-| Frontend | 98.4 % of lines, 95.9 % of branches | [coverage/frontend/coverage.txt](coverage/frontend/coverage.txt), `coverage/frontend/index.html` |
+| Backend (`internal/...`) | 95.1 % of statements | [coverage/backend.txt](coverage/backend.txt) |
+| Frontend | 98.6 % of lines, 96.1 % of branches | [coverage/frontend/coverage.txt](coverage/frontend/coverage.txt) |
 
-The reports are committed so they can be read without running anything. What is not covered is defensive: an unmapped domain error, a failure while writing a response, and the fallback for a non-API error in the UI. `cmd/server` only wires configuration and graceful shutdown and is checked by running the server and the container.
+The text summaries are committed so they can be read without running anything; `make coverage` also writes browsable HTML reports (`coverage/backend.html`, `coverage/frontend/index.html`), which are not committed. What is not covered is defensive: an unmapped domain error, a failure while writing a response, and the fallback for a non-API error in the UI. `cmd/server` only wires configuration and graceful shutdown and is checked by running the server and the container.
 
 Backend tests are table-driven: the domain package is tested on its own, and the handlers through `httptest`. Frontend tests use Vitest and Testing Library, query by accessible role and label, and mock `fetch`.
 
@@ -137,7 +137,7 @@ frontend/src/
   types/                 Shared TypeScript types
   utils/                 Input validation and result formatting
 docs/openapi.yaml        API contract (OpenAPI 3.1)
-coverage/                Committed coverage reports
+coverage/                Committed coverage summaries (HTML is generated locally)
 .github/workflows/       CI: lint, tests and Docker build
 Dockerfile               Multi-stage build: frontend, Go binary, distroless image
 docker-compose.yml       Builds and runs the single container on :8080

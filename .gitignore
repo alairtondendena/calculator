@@ -1,5 +1,12 @@
-# Raw coverage profiles (the reports in coverage/ are committed)
+# Raw coverage profiles
 *.out
+
+# Coverage: only the text summaries are committed; `make coverage` regenerates the HTML locally
+/coverage/*
+!/coverage/backend.txt
+!/coverage/frontend/
+/coverage/frontend/*
+!/coverage/frontend/coverage.txt
 
 # Build output
 /bin/

@@ -3,10 +3,11 @@ calculator/internal/calculator/calculator.go:65:	divide			100.0%
 calculator/internal/calculator/calculator.go:72:	sqrt			100.0%
 calculator/internal/httpapi/handler.go:52:		NewHandler		100.0%
 calculator/internal/httpapi/handler.go:72:		calculate		100.0%
-calculator/internal/httpapi/handler.go:101:		writeCalculatorError	66.7%
-calculator/internal/httpapi/handler.go:112:		writeError		100.0%
-calculator/internal/httpapi/handler.go:116:		writeJSON		75.0%
+calculator/internal/httpapi/handler.go:107:		decodeOne		100.0%
+calculator/internal/httpapi/handler.go:121:		writeCalculatorError	66.7%
+calculator/internal/httpapi/handler.go:132:		writeError		100.0%
+calculator/internal/httpapi/handler.go:136:		writeJSON		75.0%
 calculator/internal/httpapi/middleware.go:10:		logRequests		100.0%
 calculator/internal/httpapi/middleware.go:29:		WriteHeader		100.0%
 calculator/internal/httpapi/middleware.go:35:		Unwrap			0.0%
-total:							(statements)		94.4%
+total:							(statements)		95.1%
