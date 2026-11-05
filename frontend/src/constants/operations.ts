@@ -1,11 +1,4 @@
-import type { Operation } from './api'
-
-export interface OperationInfo {
-  value: Operation
-  label: string
-  arity: 1 | 2
-  expression: (a: number, b: number) => string
-}
+import type { OperationInfo } from '../types/calculator'
 
 // Mirrors the backend registry. The backend remains the source of truth for validation.
 export const OPERATIONS: readonly OperationInfo[] = [

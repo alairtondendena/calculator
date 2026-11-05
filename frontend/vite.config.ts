@@ -14,7 +14,8 @@ export default defineConfig({
     setupFiles: './src/test/setup.ts',
     coverage: {
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/main.tsx', 'src/test/**'],
+      // App.tsx only composes components; types/ has no runtime code.
+      exclude: ['src/main.tsx', 'src/App.tsx', 'src/types/**', 'src/test/**'],
       reportsDirectory: '../coverage/frontend',
       reporter: ['text', ['text', { file: 'coverage.txt' }], 'html'],
     },

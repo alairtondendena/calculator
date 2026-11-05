@@ -102,6 +102,7 @@ Returns `200 {"status":"ok"}`, for container orchestrators and load balancers.
 - **Strict input.** Pointer fields tell a missing operand from `0`; unknown fields, trailing data and bodies over 1 KiB are rejected. The server has read, write and idle timeouts and shuts down gracefully on SIGTERM.
 - **Go standard library only.** `net/http` method routing, `encoding/json` and `log/slog` (one structured log line per request) are enough; `go.mod` has no dependencies.
 - **The backend is the source of truth.** The frontend validates for fast feedback, but always relies on the API for the result and its errors. Known error codes are shown as user-facing messages; unknown ones fall back to the API message.
+- **Frontend split by role.** `useCalculator` holds the form state and the API call, so the components only render. The API client (`services/`) and input validation and formatting (`utils/`) are plain modules with their own tests; the hook and components are tested together through the UI, the way a user drives them. Folders by role (`components/`, `hooks/`, `services/`) are a layout most React developers recognize; for one screen, feature folders would add nothing.
 - **A form, not a keypad.** Two numbers and an operation map directly to the API, are accessible (labels, `aria-invalid`, `aria-describedby`, a live region for the result) and easy to use on a phone. A keypad would need an expression parser, which is out of scope.
 - **One container, same origin.** The Go server serves the built frontend from `STATIC_DIR`, so there is no CORS to configure. In development the Vite proxy gives the same setup. The image is a distroless, non-root, ~17 MB image.
 
@@ -124,10 +125,12 @@ backend/
   internal/calculator/   Domain: registry of operations and their edge cases
   internal/httpapi/      Handlers, request validation, error mapping, request logging
 frontend/src/
-  api.ts                 API client and error type
-  operations.ts          Operations shown in the UI (mirrors the backend registry)
-  numbers.ts             Input parsing and result formatting
-  App.tsx                Calculator form
+  components/            Calculator (form, layout styles) and NumberField
+  hooks/                 useCalculator: form state, validation, API call, error messages
+  services/              calculatorApi: API client and error type
+  constants/             Operations shown in the UI (mirrors the backend registry)
+  types/                 Shared TypeScript types
+  utils/                 Input validation and result formatting
 coverage/                Committed coverage reports
 Dockerfile               Multi-stage build: frontend, Go binary, distroless image
 ```

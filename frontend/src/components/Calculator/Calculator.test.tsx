@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
-import App from './App'
+import { Calculator } from './Calculator'
 
 function mockFetch(status: number, body: unknown) {
   return vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -12,6 +12,8 @@ function mockFetch(status: number, body: unknown) {
 function requestBody(fetchMock: ReturnType<typeof mockFetch>) {
   return JSON.parse(fetchMock.mock.calls[0][1]?.body as string)
 }
+
+type User = ReturnType<typeof userEvent.setup>
 
 async function fill({ a, op, b }: { a?: string; op?: string; b?: string }) {
   const user = userEvent.setup()
@@ -33,7 +35,7 @@ afterEach(() => {
 
 it('shows the expression and the result returned by the API', async () => {
   const fetchMock = mockFetch(200, { result: 5 })
-  render(<App />)
+  render(<Calculator />)
 
   await submit({ a: '2', b: '3' })
 
@@ -49,7 +51,7 @@ it.each([
   ['percentage', '2% of 3 = 0.06', 0.06],
 ])('sends %s and formats the result', async (op, expected, result) => {
   const fetchMock = mockFetch(200, { result })
-  render(<App />)
+  render(<Calculator />)
 
   await submit({ a: '2', op, b: '3' })
 
@@ -59,7 +61,7 @@ it.each([
 
 it('hides the second number for square root and omits b from the request', async () => {
   const fetchMock = mockFetch(200, { result: 3 })
-  render(<App />)
+  render(<Calculator />)
 
   await submit({ op: 'sqrt', a: '9' })
 
@@ -70,7 +72,7 @@ it('hides the second number for square root and omits b from the request', async
 
 it('hides floating-point noise in the result', async () => {
   mockFetch(200, { result: 0.30000000000000004 })
-  render(<App />)
+  render(<Calculator />)
 
   await submit({ a: '0.1', b: '0.2' })
 
@@ -84,7 +86,7 @@ it.each([
   ['SOMETHING_NEW', 'message from the API'],
 ])('shows a user-facing message for API error %s', async (code, message) => {
   mockFetch(422, { error: { code, message: 'message from the API' } })
-  render(<App />)
+  render(<Calculator />)
 
   await submit({ a: '1', b: '0' })
 
@@ -93,7 +95,7 @@ it.each([
 })
 it('validates each field without calling the API', async () => {
   const fetchMock = mockFetch(200, { result: 0 })
-  render(<App />)
+  render(<Calculator />)
 
   await submit({ b: '1,5' })
 
@@ -107,7 +109,7 @@ it('validates each field without calling the API', async () => {
 
 it('clears a field error when the field is edited', async () => {
   mockFetch(200, { result: 0 })
-  render(<App />)
+  render(<Calculator />)
   const user = await submit({})
 
   await user.type(screen.getByLabelText('First number'), '1')
@@ -116,9 +118,23 @@ it('clears a field error when the field is edited', async () => {
   expect(screen.getByLabelText('Second number')).toHaveAttribute('aria-invalid', 'true')
 })
 
+it.each([
+  ['editing a field', (user: User) => user.type(screen.getByLabelText('Second number'), '2')],
+  ['changing the operation', (user: User) => user.selectOptions(screen.getByLabelText('Operation'), 'multiply')],
+])('clears the API error when %s', async (_, change) => {
+  mockFetch(422, { error: { code: 'DIVISION_BY_ZERO', message: 'division by zero' } })
+  render(<Calculator />)
+  const user = await submit({ a: '1', op: 'divide', b: '0' })
+  await screen.findByRole('alert')
+
+  await change(user)
+
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+
 it('disables the button while the request is in flight', async () => {
   vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}))
-  render(<App />)
+  render(<Calculator />)
 
   await submit({ a: '1', b: '2' })
 

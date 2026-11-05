@@ -1,11 +1,4 @@
-export type Operation = 'add' | 'subtract' | 'multiply' | 'divide' | 'power' | 'sqrt' | 'percentage'
-
-export interface CalculateRequest {
-  operation: Operation
-  a: number
-  // Omitted for unary operations (sqrt).
-  b?: number
-}
+import type { CalculateRequest } from '../types/calculator'
 
 export class ApiError extends Error {
   readonly code: string
